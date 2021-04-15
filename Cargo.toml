@@ -12,7 +12,7 @@ description = "Contrain the number of instances that can possibly be used at a t
 proc-macro = true
 
 [dependencies]
-lazy_static = "*"
-bitvec = "*"
-syn = "*"
-quote = "*"
+lazy_static = "1.*.*"
+bitvec = "0.22.*"
+syn = "1.*.*"
+quote = "1.*.*"
