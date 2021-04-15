@@ -25,7 +25,7 @@ mod test{
 
 fn main() {
     let mut b = test::TestBouncer::new();
-    let mut b2 = test::TestBouncer::new(); // Can't create more than 1 bouncer if no arguments are specified to the macro
+    // let mut b2 = test::TestBouncer::new(); // Error: Can't create more than 1 bouncer if no arguments are specified to the macro
 
     let mut t1 = test::Test::new(1);
     let mut t2 = test::Test::new(2);
