@@ -3,6 +3,7 @@ name = "one_user"
 version = "0.1.0"
 authors = ["Error1000"]
 edition = "2018"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/Error1000/one_user"
 description = "Contrain the number of instances that can possibly be used at a time. By default it contrains it to one instance at a time, hence one_user."
 
