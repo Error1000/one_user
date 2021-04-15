@@ -96,6 +96,7 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
     // Main bulk of code here
     let out = quote! {
         mod #mod_name {
+            use super::*;
             const NSLOTS: usize = #num_slots;
             type Usable<#generics_defs> = super::#name<#generics>;
 
