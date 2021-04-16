@@ -75,7 +75,7 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
     let bouncer_name = format_ident!("{}Bouncer", name.to_string());
     let unbound_name = format_ident!("Unbound{}", name.to_string());
     let bound_name = format_ident!("Bound{}", name.to_string());
-
+    let mut_bound_name = format_ident!("MutBound{}", name.to_string());
     
     // Prelude
     let (num_slots, pub_defs): (usize, _) = if attr.is_empty() {
@@ -85,6 +85,7 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
                 pub type #bouncer_name = #mod_name::BOUNCER<0>;
                 pub type #unbound_name<#generics_defs> = #mod_name::Unbound<#generics>;
                 pub type #bound_name<'bound_lifetime, #generics_defs> = #mod_name::Bound<'bound_lifetime, #generics 0>;
+                pub type #mut_bound_name<'bound_lifetime, #generics_defs> = #mod_name::MutBound<'bound_lifetime, #generics 0>;
             },
         )
     } else {
@@ -96,6 +97,7 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
                   pub type #bouncer_name<const SLOT: usize> = #mod_name::BOUNCER<SLOT>;
                   pub type #unbound_name<#generics_defs> = #mod_name::Unbound<#generics>;
                   pub type #bound_name<'bound_lifetime, #generics_defs const SLOT: usize> = #mod_name::Bound<'bound_lifetime, #generics SLOT>;
+                  pub type #mut_bound_name<'bound_lifetime, #generics_defs const SLOT: usize> = #mod_name::MutBound<'bound_lifetime, #generics SLOT>;
             },
         )
     };
@@ -108,7 +110,7 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
             type Usable<#generics_defs> = super::#name<#generics>;
 
             pub trait OnBind {
-                fn on_bind<const SLOT: usize>(&mut self);
+                fn on_bind<const SLOT: usize>(&self);
             }
 
             use bitvec::prelude::*;
@@ -144,9 +146,9 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
             }
 
             // Because there only ever exists one bouncer a &mut to a BOUNCER must be unique, so thre can only ever exist one Bound
-            pub struct Bound<'bound_lifetime, #generics_defs const SLOT: usize>(&'bound_lifetime mut Usable<#generics>, &'bound_lifetime mut BOUNCER<SLOT>) where #where_clause_preds;
+            pub struct MutBound<'bound_lifetime, #generics_defs const SLOT: usize>(&'bound_lifetime mut Usable<#generics>, &'bound_lifetime mut BOUNCER<SLOT>) where #where_clause_preds;
 
-            impl<#generics_defs const SLOT: usize> Deref for Bound<'_, #generics SLOT> 
+            impl<#generics_defs const SLOT: usize> Deref for MutBound<'_, #generics SLOT> 
             where #where_clause_preds {
                 type Target = Usable<#generics>;
 
@@ -156,11 +158,23 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
                 }
             }
 
-            impl<#generics_defs const SLOT: usize> DerefMut for Bound<'_, #generics SLOT> 
+            impl<#generics_defs const SLOT: usize> DerefMut for MutBound<'_, #generics SLOT> 
             where #where_clause_preds {
                 #[inline]
                 fn deref_mut(&mut self) -> &mut Self::Target {
                     &mut self.0
+                }
+            }
+
+            pub struct Bound<'bound_lifetime, #generics_defs const SLOT: usize>(&'bound_lifetime Usable<#generics>, &'bound_lifetime mut BOUNCER<SLOT>) where #where_clause_preds;
+
+            impl<#generics_defs const SLOT: usize> Deref for Bound<'_, #generics SLOT>
+            where #where_clause_preds {
+                type Target = Usable<#generics>;
+
+                #[inline]
+                fn deref(&self) -> &Self::Target { 
+                    &self.0
                 }
             }
 
@@ -176,10 +190,17 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
                     Unbound(val)
                 } // Takes a Usable and makes it an Unbound, this is fine since Usable can control how it's constructed and return an Unbound(Usable) instead of a Usable so there is no way a normal user can make a Usable without it being Unbound
                 #[inline]
-                pub fn bind<'bound_lifetime, const SLOT: usize>(&'bound_lifetime mut self, bn: &'bound_lifetime mut BOUNCER<SLOT>) -> Bound<'bound_lifetime, #generics SLOT> {
+                pub fn bind_mut<'bound_lifetime, const SLOT: usize>(&'bound_lifetime mut self, bn: &'bound_lifetime mut BOUNCER<SLOT>) -> MutBound<'bound_lifetime, #generics SLOT> {
                     self.0.on_bind::<SLOT>();
                     LAST_SLOT.store(SLOT, core::sync::atomic::Ordering::Relaxed);
-                    Bound(&mut self.0, bn)
+                    MutBound(&mut self.0, bn)
+                }
+
+                #[inline]
+                pub fn bind<'bound_lifetime, const SLOT: usize>(&'bound_lifetime self, bn: &'bound_lifetime mut BOUNCER<SLOT>) -> Bound<'bound_lifetime, #generics SLOT> {
+                    self.0.on_bind::<SLOT>();
+                    LAST_SLOT.store(SLOT, core::sync::atomic::Ordering::Relaxed);
+                    Bound(&self.0, bn)
                 }
             }
 

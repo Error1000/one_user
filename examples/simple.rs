@@ -19,7 +19,7 @@ mod test{
     }
 
     impl<T> test_binder::OnBind for Test<T> {
-        fn on_bind<const SLOT: usize>(&mut self) {}
+        fn on_bind<const SLOT: usize>(&self) {}
     }
 
 }
@@ -28,8 +28,8 @@ fn main() {
     let mut b = test::TestBouncer::new();
     // let mut b2 = test::TestBouncer::new(); // Error: Can't create more than 1 bouncer if no arguments are specified to the macro
 
-    let mut t1 = test::Test::new(1);
-    let mut t2 = test::Test::new(2);
+    let t1 = test::Test::new(1);
+    let t2 = test::Test::new(2);
     // Here we cannot use t1 or t2 because they are not bound
     //println!("{:?}", t1); // Error
 
