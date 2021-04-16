@@ -17,16 +17,17 @@ use syn::{parse_macro_input, DeriveInput};
 #[proc_macro_attribute]
 pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
     let sinput = input.to_string();
-    println!("{:?}", input);
+    //println!("{:?}", input);
 
     let input = parse_macro_input!(input as DeriveInput);
 
     {
         let d = if let syn::Data::Struct(d) = input.data {
-            d.fields
+            d
         } else {
             panic!("Macro only works on structs at the moment!");
         };
+        let d = d.fields;
 
         assert!(
             d.iter().any(|field| match field.vis {
@@ -38,6 +39,9 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
     }
 
     let name = input.ident;
+    let where_clause_preds = input.generics.where_clause.map(|x|x.predicates);
+
+
     let generics_defs = {
         let mut generics_defs = input.generics.params;
         if !generics_defs.is_empty() {
@@ -45,6 +49,7 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
         }
         generics_defs
     };
+
 
     let generics: Punctuated<GenericParam, Token![,]> = {
         let mut generics = generics_defs
@@ -139,9 +144,10 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
             }
 
             // Because there only ever exists one bouncer a &mut to a BOUNCER must be unique, so thre can only ever exist one Bound
-            pub struct Bound<'bound_lifetime, #generics_defs const SLOT: usize>(&'bound_lifetime mut Usable<#generics>, &'bound_lifetime mut BOUNCER<SLOT>);
+            pub struct Bound<'bound_lifetime, #generics_defs const SLOT: usize>(&'bound_lifetime mut Usable<#generics>, &'bound_lifetime mut BOUNCER<SLOT>) where #where_clause_preds;
 
-            impl<#generics_defs const SLOT: usize> Deref for Bound<'_, #generics SLOT> {
+            impl<#generics_defs const SLOT: usize> Deref for Bound<'_, #generics SLOT> 
+            where #where_clause_preds {
                 type Target = Usable<#generics>;
 
                 #[inline]
@@ -150,7 +156,8 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
                 }
             }
 
-            impl<#generics_defs const SLOT: usize> DerefMut for Bound<'_, #generics SLOT> {
+            impl<#generics_defs const SLOT: usize> DerefMut for Bound<'_, #generics SLOT> 
+            where #where_clause_preds {
                 #[inline]
                 fn deref_mut(&mut self) -> &mut Self::Target {
                     &mut self.0
@@ -159,9 +166,11 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
 
             pub struct Unbound<#generics_defs>(Usable<#generics>)
             where
-                Usable<#generics>: OnBind; // Usable is private, this is important because it means to get a Usable you must go through bind which goes through a Bound which requires a &mut BOUNCER, whichs is unique, so no matter how many Unbound there are, there will only ever be one Bound at a time
+                Usable<#generics>: OnBind, // Usable is private, this is important because it means to get a Usable you must go through bind which goes through a Bound which requires a &mut BOUNCER, whichs is unique, so no matter how many Unbound there are, there will only ever be one Bound at a time
+                #where_clause_preds; 
 
-            impl<#generics_defs> Unbound<#generics> {
+            impl<#generics_defs> Unbound<#generics> 
+            where #where_clause_preds {
                 #[inline]
                 pub fn from(val: Usable<#generics>) -> Unbound<#generics> {
                     Unbound(val)

@@ -3,23 +3,22 @@ extern crate one_user;
 extern crate lazy_static;
 
 mod test{
-
+    use core::fmt::Debug;
     use one_user::one_user;
     #[one_user]
     #[derive(Debug)]
-    pub struct Test<T>
-    where T: Debug{
+    pub struct Test<T> {
         item: T
     }
 
 
-    impl Test{
-        pub fn new(d: usize) -> UnboundTest{
+    impl<T> Test<T> {
+        pub fn new(d: T) -> UnboundTest<T>{
             UnboundTest::from(Test{ item: d })
         }
     }
 
-    impl test_binder::OnBind for Test {
+    impl<T> test_binder::OnBind for Test<T> {
         fn on_bind<const SLOT: usize>(&mut self) {}
     }
 
