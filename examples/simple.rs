@@ -3,11 +3,13 @@ extern crate one_user;
 extern crate lazy_static;
 
 mod test{
+
     use one_user::one_user;
     #[one_user]
     #[derive(Debug)]
-    pub struct Test {
-        item: usize
+    pub struct Test<T>
+    where T: Debug{
+        item: T
     }
 
 

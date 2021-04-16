@@ -17,7 +17,7 @@ use syn::{parse_macro_input, DeriveInput};
 #[proc_macro_attribute]
 pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
     let sinput = input.to_string();
-    //println!("{}", sinput);
+    println!("{:?}", input);
 
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -63,6 +63,7 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
         generics
     };
 
+    //let where_clause = input.
     // Names for stuff    
     let mod_name = format_ident!("{}_binder", name.to_string().to_lowercase());
 
@@ -70,6 +71,7 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
     let unbound_name = format_ident!("Unbound{}", name.to_string());
     let bound_name = format_ident!("Bound{}", name.to_string());
 
+    
     // Prelude
     let (num_slots, pub_defs): (usize, _) = if attr.is_empty() {
         (
