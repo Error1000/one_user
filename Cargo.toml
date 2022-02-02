@@ -1,6 +1,6 @@
 [package]
 name = "one_user"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Error1000"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
@@ -13,6 +13,6 @@ proc-macro = true
 
 [dependencies]
 lazy_static = "1.*.*"
-bitvec = "0.22.*"
+bitvec = "1.*.*"
 syn = "1.*.*"
 quote = "1.*.*"

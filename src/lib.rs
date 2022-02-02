@@ -120,7 +120,7 @@ pub fn one_user(attr: TokenStream, input: TokenStream) -> TokenStream {
             };
 
             lazy_static! {
-                static ref BOUNCER_GUARD: Mutex<BitArr!(for NSLOTS, in Msb0, u8)> = Mutex::new(BitArray::zeroed()); // BOUNCER_GUARD is private, this is important because we don't want somebody take()-ing the intialised OnceCell, leaving it uninitialised, and being able to call new() again on BOUNCER again and have two BOUNCERs
+                static ref BOUNCER_GUARD: Mutex<BitArr!(for NSLOTS, in u8)> = Mutex::new(BitArray::ZERO); // BOUNCER_GUARD is private, this is important because we don't want somebody take()-ing the intialised OnceCell, leaving it uninitialised, and being able to call new() again on BOUNCER again and have two BOUNCERs
                 pub static ref LAST_SLOT: AtomicUsize = AtomicUsize::new(0);
             }
 
